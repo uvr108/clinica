@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Agenda · Ribera Dental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF2F0; --surface:#FFFFFF; --ink:#16231F; --muted:#63756D;
+    --accent:#0D5C4D; --accent-ink:#FFFFFF; --line:#D6DFDB; --warn:#8A3B2E;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#101613; --surface:#171E1A; --ink:#E7EEEA; --muted:#93A59D;
+      --accent:#5FC6AC; --accent-ink:#0B1714; --line:#27332E; --warn:#E39280;
+    }
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Inter",Helvetica,Arial,sans-serif; font-size:16px; line-height:1.5}
+  .wrap{max-width:820px; margin:0 auto; padding:34px 22px 60px}
+  h1{font-family:"Instrument Serif",Georgia,serif; font-weight:400; font-size:34px; margin:0 0 6px}
+  p.sub{color:var(--muted); margin:0 0 26px; font-size:15px}
+  label{display:block; font-size:13.5px; color:var(--muted); margin:0 0 5px}
+  input{width:100%; font:inherit; font-size:15px; color:var(--ink); background:var(--surface);
+    border:1px solid var(--line); border-radius:9px; padding:10px 12px}
+  button{font:inherit; cursor:pointer}
+  .entrar{display:flex; gap:10px; align-items:flex-end; max-width:420px}
+  .entrar button{background:var(--accent); color:var(--accent-ink); border:0; border-radius:9px;
+    padding:11px 18px; font-size:15px}
+  .aviso{color:var(--warn); font-size:14px; margin-top:12px; min-height:20px}
+  table{width:100%; border-collapse:collapse; margin-top:22px; font-size:14.5px}
+  th{text-align:left; font-weight:500; color:var(--muted); font-size:13px;
+     padding:0 10px 8px 0; border-bottom:1px solid var(--line)}
+  td{padding:11px 10px 11px 0; border-bottom:1px solid var(--line); vertical-align:top}
+  td.fecha{white-space:nowrap; color:var(--muted)}
+  a{color:inherit}
+  .soltar{background:none; border:0; color:var(--warn); text-decoration:underline; font-size:13.5px; padding:0}
+  .hidden{display:none !important}
+  .vacio{color:var(--muted); margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Agenda del equipo</h1>
+  <p class="sub">Horas reservadas desde hoy en adelante.</p>
+
+  <form class="entrar" id="entrar">
+    <div style="flex:1">
+      <label for="clave">Clave de acceso</label>
+      <input id="clave" type="password" autocomplete="current-password">
+    </div>
+    <button type="submit">Entrar</button>
+  </form>
+  <p class="aviso" id="aviso"></p>
+
+  <div class="hidden" id="panel">
+    <table>
+      <thead><tr><th>Día y hora</th><th>Paciente</th><th>Motivo</th><th></th></tr></thead>
+      <tbody id="filas"></tbody>
+    </table>
+    <p class="vacio hidden" id="vacio">No hay horas reservadas.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var clave = sessionStorage.getItem("clave_agenda") || "";
+
+  function cargar(){
+    fetch("/api/agenda", { headers: { "x-clave-agenda": clave } })
+      .then(function(r){ return r.json().then(function(b){ return {ok:r.ok, body:b}; }); })
+      .then(function(res){
+        if (!res.ok){
+          sessionStorage.removeItem("clave_agenda");
+          $("panel").classList.add("hidden");
+          $("entrar").classList.remove("hidden");
+          $("aviso").textContent = (res.body && res.body.error) || "No se pudo acceder.";
+          return;
+        }
+        $("aviso").textContent = "";
+        $("entrar").classList.add("hidden");
+        $("panel").classList.remove("hidden");
+        pintar(res.body.citas || []);
+      })
+      ["catch"](function(){ $("aviso").textContent = "Error de conexión."; });
+  }
+
+  function pintar(citas){
+    var tb = $("filas");
+    tb.innerHTML = "";
+    $("vacio").classList.toggle("hidden", citas.length > 0);
+    citas.forEach(function(c){
+      var tr = document.createElement("tr");
+
+      var td1 = document.createElement("td");
+      td1.className = "fecha";
+      td1.textContent = c.fecha + " · " + c.hora;
+
+      var td2 = document.createElement("td");
+      var b = document.createElement("div");
+      b.textContent = c.nombre;
+      var tel = document.createElement("a");
+      tel.href = "tel:" + String(c.telefono).replace(/\s/g,"");
+      tel.textContent = c.telefono;
+      var small = document.createElement("div");
+      small.style.fontSize = "13.5px";
+      small.appendChild(tel);
+      if (c.email){ small.appendChild(document.createTextNode(" · " + c.email)); }
+      td2.appendChild(b); td2.appendChild(small);
+
+      var td3 = document.createElement("td");
+      td3.textContent = c.tratamiento;
+
+      var td4 = document.createElement("td");
+      var del = document.createElement("button");
+      del.className = "soltar";
+      del.type = "button";
+      del.textContent = "Liberar";
+      del.addEventListener("click", function(){
+        if (!confirm("¿Liberar la hora de " + c.nombre + "?")) return;
+        fetch("/api/agenda?id=" + c.id, { method: "DELETE", headers: { "x-clave-agenda": clave } })
+          .then(cargar);
+      });
+      td4.appendChild(del);
+
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+      tb.appendChild(tr);
+    });
+  }
+
+  $("entrar").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    clave = $("clave").value;
+    sessionStorage.setItem("clave_agenda", clave);
+    cargar();
+  });
+
+  if (clave) cargar();
+})();
+</script>
+</body>
+</html>
