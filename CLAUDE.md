@@ -78,5 +78,6 @@ Dónde se cambia cada cosa:
 - Cada commit guarda **todo** el trabajo realizado: incluir todos los cambios
   (`git add -A`), sin dejar archivos sueltos fuera.
 - El mensaje, en español, resume qué se hizo y por qué, con una lista de los cambios.
+- Nunca hacer `git push`: el push lo hace el usuario.
 - Autor: `ulises108 <ulises108@gmail.com>` (usar `git -c user.name=... -c user.email=...`
   si la identidad no está configurada).
