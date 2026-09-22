@@ -72,3 +72,11 @@ Dónde se cambia cada cosa:
 - **Datos de pacientes (Ley 19.628, Chile):** guardar solo lo necesario, nunca pedir
   datos clínicos en el formulario.
 - Textos en español de Chile, claros y cálidos, orientados al paciente.
+
+## Commits
+
+- Cada commit guarda **todo** el trabajo realizado: incluir todos los cambios
+  (`git add -A`), sin dejar archivos sueltos fuera.
+- El mensaje, en español, resume qué se hizo y por qué, con una lista de los cambios.
+- Autor: `ulises108 <ulises108@gmail.com>` (usar `git -c user.name=... -c user.email=...`
+  si la identidad no está configurada).
